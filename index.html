@@ -1,0 +1,228 @@
+<!-- Travail Pratique - Volet 1 par Camilia El Moustarih -->
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Travail Pratique 1 - Volet 1 - Camilia El Moustarih</title>
+    <link href="https://fonts.googleapis.com/css2?family=Shalimar&display=swap" rel="stylesheet">
+
+    <style type="text/css">
+      body {
+        text-align: center;
+        font-family: 'Shalimar', cursive;
+        font-size: 40px;
+      }
+
+      canvas {
+        background-image: url('images/introJeu.jpg');
+        cursor: pointer;
+      }
+      
+      p {
+        width: 900px;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Volet 1 du jeu Le Fabricant de Potions</h2>
+    <canvas width="700" height="467"></canvas>
+    <p>
+     Attrape les ingrédients nécessaires pour fabriquer tes potions.
+    </p>
+    <p>Attention aux châtaignes qui tombent! Tu perdras une vie!</p>
+    <p>Utilise les touches A et D ou les flèches &larr; et &rarr; pour te déplacer dans la forêt.</p>
+    <p>Clique n'importe où dans le jeu pour commencer la partie.</p>
+
+    <script>
+      
+      //Récupérer le canvas
+      let leCanvas = document.querySelector("canvas");
+      let ctx = leCanvas.getContext("2d");
+
+      //Variable de type Objet pour déterminer les propriétés du personnage principal du jeu
+      let persoChat = {
+        img: new Image(),
+        urlImage: "images/persoChatFace_Normal.png", 
+        x: 0,
+        y: 0,
+        largeur: 64,
+        hauteur: 64,
+        indexVignette: 0, // Première vignette
+        nbVignettes: 4, // Nombre de vignettes pour l'animation de marche
+        sourceX: 0, // Coordonnée x de la vignette à afficher
+        vitesseX: 4, // Vitesse horizontale
+      };
+
+      //Charger l'image du personnage du jeu dans sa position principale
+      persoChat.img.src = persoChat.urlImage;
+
+      //Positionner le personnage du chat sur l'axe des X et des Y au centre en en bas du canvas
+      persoChat.x = leCanvas.width/2 - persoChat.largeur/ 2;
+      persoChat.y = leCanvas.height - persoChat.hauteur/2;
+
+      //Dessiner le personnage sur le canvas aux positions déclarées
+      ctx.drawImage(persoChat.img, persoChat.x, persoChat.y);
+
+      //Variable fleches de type Objet pour savoir si les touches fléchées du clavier gauche ou droite sont appuyées
+      let fleches = {
+        gauche: false,
+        droite: false,
+      };
+
+      //Variable touches de type Objet pour savoir si les touches du clavier A (gauche) ou D (droite) sont appuyées
+      let touchesAD = {
+        gauche: false,
+        droite: false,
+      };
+
+      ///////////////////////////////  DÉMARRAGE ET ÉVÉNEMENTS DU JEU //////////////////////////////////////////////////
+
+      //Fonction pour débuter le jeu au clic sur le canvas
+      leCanvas.addEventListener("click", commencerLeJeu);
+
+      //Déclarer les fonctions de mise à jour du jeu pour le dessin des éléments du jeu, etc.
+      let intervalJeuID; 
+      let animationPerso;
+
+      //Écouteurs sur le document pour détecter si des touches de clavier sont appuyées ou relâchées
+      document.addEventListener("keydown", appuyerTouche);
+      document.addEventListener("keyup", relacherTouche);
+
+      //////////////////////////// LES FONCTIONS  ///////////////////////////////////////
+
+      //Fonction qui débute le jeu en changeant l'arrière-plan du canvas et en partant l'actualisation du jeu
+      function commencerLeJeu() {
+
+        //Afficher l'arrière-plan du jeu après le clic de la souris
+        leCanvas.style.backgroundImage = "url('images/fondJeuForet.jpg')";
+
+        //Partir le setInterval pour l'actualisation de l'affichage du jeu
+        intervalJeuID = setInterval(actualiserLeJeu, 1000/60);
+        animationPerso = setInterval(gererImageDuPerso, 1000/4); 
+
+        //Enlever le gestionnaire d'événement qui débute le jeu
+        leCanvas.removeEventListener("click", commencerLeJeu);        
+      }
+
+      //Fonction qui actualise l'affichage et l'actualisation du jeu
+      function actualiserLeJeu() {
+        //Effacer le contenu actuel du contexte de rendu du canvas
+        ctx.clearRect(0, 0, leCanvas.width, leCanvas.height);
+
+        //Appel direct de la fonction pour déplacer et dessiner le personnage
+        deplacerPerso();
+
+      //Fonction pour déplacer et dessiner le personnage
+      function deplacerPerso(gererImageDuPerso) {
+        //Calculer les futures positions du perso et définir la feuille de sprites à afficher selon les touches appuyées
+        if (fleches.droite || touchesAD.droite) {
+            persoChat.x += persoChat.vitesseX;
+              persoChat.img.src = "images/chatMarcheDroite.png";
+        }
+        if (fleches.gauche || touchesAD.gauche) {
+            persoChat.x -= persoChat.vitesseX;
+              persoChat.img.src = "images/chatMarcheGauche.png";
+        }
+
+        //Si le perso sort par la droite on le ramène à gauche et vice-versa
+        //À droite
+        if (persoChat.x > leCanvas.width) {
+            persoChat.x = -persoChat.largeur;
+        }
+        //À gauche
+        if (persoChat.x < -persoChat.largeur) {
+            persoChat.x = leCanvas.width;
+        }
+
+        yMax = leCanvas.height - persoChat.hauteur
+        if(persoChat.y > yMax){
+          persoChat.y = yMax
+        }
+        //Dessiner le personnage avec ses vignettes
+        ctx.drawImage(persoChat.img, persoChat.sourceX, 0, persoChat.largeur, persoChat.hauteur, persoChat.x, persoChat.y, persoChat.largeur, persoChat.hauteur);
+      }
+
+      //Fonction pour gérer la vignette à afficher pour l'animation du personnage
+      function gererImageDuPerso() {
+        //Définir la coordonnée sourceX de la vignette à afficher
+        persoChat.sourceX = persoChat.indexVignette * persoChat.largeur;
+
+        //Incrémenter et gérer l’index de la prochaine vignette à afficher
+        persoChat.indexVignette += 1;
+
+        if (persoChat.indexVignette == persoChat.nbVignettes) {
+            persoChat.indexVignette = 0;
+                }
+            }
+        }
+
+      //Détecte quelles touches sont appuyées
+      function appuyerTouche(event) {
+        //Enregistrer si une touche A ou D ou une flèche gauche/droite est enfoncée
+        if (event.keyCode == 39) {
+            //flèche droite
+            fleches.droite = true;
+          }
+
+        if(event.keyCode == 68){
+            //touche D
+          touchesAD.droite = true;
+        }
+
+        if (event.keyCode == 37) {
+            //flèche gauche 
+            fleches.gauche = true;
+          }
+
+        if(event.keyCode == 65){
+            //touche A
+          touchesAD.gauche = true;
+        }
+        }
+
+      //Fonction pour gérer la vignette à afficher pour l'animation du personnage
+      function gererImageDuPerso() {
+        //Définir la coordonnée sourceX de la vignette à afficher
+        persoChat.sourceX = persoChat.indexVignette * persoChat.largeur;
+
+        //Incrémenter et gérer l’index de la prochaine vignette à afficher
+        persoChat.indexVignette += 1;
+
+        if (persoChat.indexVignette == persoChat.nbVignettes) {
+            persoChat.indexVignette = 0;
+            }
+        }
+
+      //Détecte quelles touches sont relachées
+      function relacherTouche(event) {
+        //Enregistrer si une flèche haut/bas est relâchée
+        if (event.keyCode == 39) {
+            //flèche droite
+            fleches.droite = false;
+            persoChat.img.src = "images/persoChatFace_Normal.png";
+            }
+        
+        if(event.keyCode == 68){
+            //touche D
+          touchesAD.droite = false;
+          persoChat.img.src = "images/persoChatFace_Normal.png";
+        }
+
+        if (event.keyCode == 37) {
+            //flèche gauche
+            fleches.gauche = false;
+            persoChat.img.src = "images/persoChatFace_Normal.png";
+            }
+
+        if(event.keyCode == 65){
+            //touche A
+          touchesAD.gauche = false;
+          persoChat.img.src = "images/persoChatFace_Normal.png";
+        }
+        }
+    </script>
+  </body>
+</html>
